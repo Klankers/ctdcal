@@ -104,7 +104,15 @@ def cleanup_visualizer():
 def event_logger():
     """
     An event logger, for reporting purposes.
+
+    Date, time from system (translate to UTC), user comment, system type (ship, CTD, bottle, other), optional latitude and longitude, optional CTD depth, optional "affected systems"
     """
+    
+    from datetime import datetime
+    import pytz
+
+    current_time = datetime.now(pytz.utc).strftime('%Y-%m-%d %H:%M:%S')
+
     pass
 
 def gui_settings():
