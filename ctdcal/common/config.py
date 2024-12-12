@@ -63,6 +63,23 @@ def build_user_routine():
 def edit_config(config_path):
     """
     Loads an existing configuration file for the user to edit it.
+
+    Works using YAML levels, where each level is able to be added to, removed, or have a child built therin.
+
+    Example:
+    I'm working with the .XMLCON "sensor_package.yaml" and I notice there is a "RINKO" sensor with no info. I have the calib sheet, but no digital media for it,
+    so I hit "edit_config" to adjust the "RINKO" field and add calibration coefficients that can be referenced later.
+    * For each sensor, I should be able to add a field and call it whatever I want
+    * For each field inside of that, I should be able to populate a dictionary like how the SBE.XMLCON stores its calib. coeffs
+
+    Example 2:
+    I'm coming close to the end of a cruise and I finally got the contact info for the chief sci. I've been processing data the whole time, working
+    on the cruise report, and now I want to add their info to the report. I hit "edit_config" for the "cruise.yaml" and adjust the blank entry so that
+    CTDCAL can pull from it in the future.
+
+    Example 3:
+    I'm processing a particular cast and I want to try a different fitting method. I can hit "edit_config" for the "cast_by_cast.yaml" and adjust the
+    entry for that specific cast to be a different routine defined elsewhere which CTDCAL can use for a rerun.
     """
     pass
 

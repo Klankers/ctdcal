@@ -32,3 +32,11 @@ def plot_section():
 def plot_geographic():
     #   For things like station locations, event logger info (like sensor swaps), start and end locations, etc.
     pass
+
+def merge_plots():
+    """
+    For merging plots into a single figure.
+
+    Loads multiple images and assembles them into a mosaic. Good for sections, casts, and geographics at the same time.
+    """
+    pass
