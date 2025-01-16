@@ -1,1 +1,3 @@
-### Flagging module for roughly-continous data streams
+"""
+Flagging module for continuous data streams.
+"""

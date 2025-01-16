@@ -2,7 +2,12 @@
 Command line interface (CLI) handling for CTDCAL
 ================================================
 
-This provides a command-line interface (CLI) for managing, processing, and analyzing CTD (Conductivity-Temperature-Depth) data using the `ctdcal` package. It includes commands for initializing data directories, importing and processing data, generating cruise reports, and performing file format conversions.
+This provides a command-line interface (CLI) for managing, processing, and
+analyzing CTD (Conductivity-Temperature-Depth) data using the `ctdcal` package.
+
+It includes commands for initializing data directories, importing and
+processing data, generating cruise reports, and performing file format
+conversions.
 
 Commands
 --------
@@ -11,8 +16,10 @@ Examples
 --------
 
 """
+
 import logging
-from importlib import resources
+
+# from importlib import resources
 from pathlib import Path
 
 import click
@@ -23,7 +30,8 @@ import click
 # from rich.logging import RichHandler
 # from rich.console import Console
 # handler = logging.StreamHandler()
-# handler.addFilter(logging.Filter("ctdcal"))  # filter out msgs from other modules
+# filter out msgs from other modules
+# handler.addFilter(logging.Filter("ctdcal"))
 # FORMAT = "%(funcName)s: %(message)s"
 # logging.basicConfig(
 #     level="INFO",
@@ -34,17 +42,19 @@ import click
 
 # log = logging.getLogger(__name__)
 
-## logging settings
+# logging settings
 # terminal output
 stream = logging.StreamHandler()
 stream.setLevel(logging.WARNING)
-stream.addFilter(logging.Filter("ctdcal"))  # filter out msgs from other modules
+# filter out msgs from other modules
+stream.addFilter(logging.Filter("ctdcal"))
 
 # ctdcal.log output
 logfile_FORMAT = "%(asctime)s | %(funcName)s |  %(levelname)s: %(message)s"
 logfile = logging.FileHandler("ctdcal.log")
 logfile.setLevel(logging.NOTSET)
-logfile.addFilter(logging.Filter("ctdcal"))  # filter out msgs from other modules
+# filter out msgs from other modules
+logfile.addFilter(logging.Filter("ctdcal"))
 logfile.setFormatter(logging.Formatter(logfile_FORMAT))
 
 # global configs
@@ -78,7 +88,7 @@ def cli(debug):
 def init():
     """Setup data folder with appropriate subfolders"""
 
-    log.info(f"Building default /data/ directories: \n {*cfg.dirs.keys(),}")
+    log.info(f"Building default /data/ directories: \n {(*cfg.dirs.keys(),)}")
 
     for sub_dir in cfg.dirs.values():
         Path(sub_dir).mkdir(parents=True)
@@ -127,6 +137,7 @@ def cruise_report():
 
     cruise_report_residuals()
 
+
 #   QC tool - requires BOKEH
 
 # from bokeh.application import Application
@@ -155,7 +166,9 @@ def cruise_report():
 )
 @cli.command()
 def quick_convert(file):
-    """Convert Sea-Bird .cnv files to Exchange CTD (ct1) and bottle (hy1) files."""
+    """
+    Convert Sea-Bird .cnv files to Exchange CTD (ct1) and bottle (hy1) files.
+    """
     from .scripts.quick_convert import cnv_to_ct1
 
     if file == "ct1":

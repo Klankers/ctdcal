@@ -4,7 +4,8 @@ Generic fitting
 
 Module for fitting CTDCAL data.
 
-This module contains the code required for fitting CTDCAL data, using methods that are applicable to either continuous or discrete data.
+This module contains the code required for fitting CTDCAL data, using methods
+that are applicable to either continuous or discrete data.
 
 Classes
 -------
@@ -18,12 +19,14 @@ Examples
 """
 
 import numpy as np
-import pandas as pd
+
+# import pandas as pd
+
 
 def _prepare_fit_data(df, param, ref_param, zRange=None):
     """
     Remove non-finite data, trim to desired zRange, and remove extreme outliers
-    
+
     2024-12-02 AJM Note to self that this could be a processors.odf item
     """
 
@@ -32,7 +35,8 @@ def _prepare_fit_data(df, param, ref_param, zRange=None):
     if zRange is not None:
         zMin, zMax = zRange.split(":")
         good_data = good_data[
-            (good_data["CTDPRS"] > int(zMin)) & (good_data["CTDPRS"] < int(zMax))
+            (good_data["CTDPRS"] > int(zMin))
+            & (good_data["CTDPRS"] < int(zMax))
         ]
 
     good_data["Diff"] = good_data[ref_param] - good_data[param]
@@ -43,14 +47,16 @@ def _prepare_fit_data(df, param, ref_param, zRange=None):
 
     return df_good, df_bad
 
+
 def multivariate_fit(y, *args, coef_names=None, const_name="c0"):
     """
-    Least-squares fit data using multiple dependent variables. Dependent variables must
-    be provided in tuple pairs of (data, order) as positional arguments.
+    Least-squares fit data using multiple dependent variables. Dependent
+    variables must be provided in tuple pairs of (data, order) as positional
+    arguments.
 
-    If coef_names are defined, coefficients will be returned as a dict. Otherwise,
-    coefficients are return as an array in the order of the dependent variables, sorted
-    by decreasing powers.
+    If coef_names are defined, coefficients will be returned as a dict.
+    Otherwise, coefficients are return as an array in the order of the
+    dependent variables, sorted by decreasing powers.
 
     Parameters
     ----------
@@ -59,7 +65,8 @@ def multivariate_fit(y, *args, coef_names=None, const_name="c0"):
     args : tuple
         Pairs of dependent variable data and fit order (i.e., (data, order))
     coef_names : list-like, optional
-        Base names for coefficients (i.e., "a" for 2nd order yields ["a2", "a1"])
+        Base names for coefficients (i.e., "a" for 2nd order yields
+        ["a2", "a1"])
     const_name : str, optional
         Name for constant offset term
 
@@ -107,7 +114,8 @@ def multivariate_fit(y, *args, coef_names=None, const_name="c0"):
 
         series, order = arg
         for n in np.arange(1, order + 1)[::-1]:
-            rows.append(series ** n)  # n is np.int64 so series will cast to np.ndarray
+            rows.append(series**n)
+            # n is np.int64 so series will cast to np.ndarray
             names.append(f"{coef_root}{n}")
 
     # add constant offset term
@@ -119,14 +127,16 @@ def multivariate_fit(y, *args, coef_names=None, const_name="c0"):
 
     return dict(zip(names, coefs)) if to_dict else coefs
 
+
 def apply_polyfit(y, y_coefs, *args):
     """
-    Apply a polynomial correction to series of data. Coefficients should be provided in
-    increasing order (i.e., a0, a1, a2 for y_fit = y + a2 * y ** 2 + a1 * y + a0)
+    Apply a polynomial correction to series of data. Coefficients should be
+    provided in increasing order
+    (i.e., a0, a1, a2 for y_fit = y + a2 * y ** 2 + a1 * y + a0)
 
-    For the independent variables (y), coefficients start from the zero-th order (i.e.,
-    constant offset). For dependent variables (args), coefficients start from the first
-    order (i.e., linear term).
+    For the independent variables (y), coefficients start from the zero-th
+    order (i.e., constant offset). For dependent variables (args), coefficients
+    start from the first order (i.e., linear term).
 
     Parameters
     ----------
@@ -135,7 +145,8 @@ def apply_polyfit(y, y_coefs, *args):
     y_coefs : tuple of float
         Independent variable fit coefficients (i.e., (coef0, ..., coefN))
     args : tuple of (array-like, (float, float, ...))
-        Dependent variable data and fit coefficients (i.e., (data, (coef1, ..., coefN)))
+        Dependent variable data and fit coefficients
+        (i.e., (data, (coef1, ..., coefN)))
 
     Returns
     -------

@@ -1,1 +1,5 @@
-### Testing module for the parsers.sbe35 (does this work? Do later.)
+"""
+Testing module for parsers.sbe35
+
+TODO: Learn how to do this? How does it pull from the various subfolders?
+"""

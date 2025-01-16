@@ -1,1 +1,3 @@
-### Fitting module for continuous CTD data
+"""
+Fitting modele for continus CTD data.
+"""
