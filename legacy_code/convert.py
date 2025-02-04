@@ -9,13 +9,13 @@ import gsw
 import numpy as np
 import pandas as pd
 
-from . import equations_sbe as sbe_eq
-from . import get_ctdcal_config
-from . import process_bottle as btl
-from . import process_ctd as process_ctd
-from . import sbe_reader as sbe_rd
+from ctdcal import equations_sbe as sbe_eq
+from ctdcal import get_ctdcal_config
+from ctdcal import process_bottle as btl
+from ctdcal import process_ctd as process_ctd
+from ctdcal import sbe_reader as sbe_rd
 from ctdcal.processors.cast_tools import Cast
-from .common import validate_dir
+from ctdcal.common import validate_dir
 
 cfg = get_ctdcal_config()
 log = logging.getLogger(__name__)
@@ -127,6 +127,12 @@ short_lookup = {
         "units": "0-5VDC",
         "type": "float64",
     },
+    "21": {
+        "short_name": "some ices sensor",
+        "long_name": "some ices sensor",
+        "units": "0-5VDC",
+        "type": "float64",
+    },
 }
 
 
@@ -163,7 +169,7 @@ def make_time_files(casts, datadir, user_cfg):
     to filter are from user-specified configurations.
 
     The time on deck, the soak, and the upcast are trimmed to provide a continuous downcast.
-    
+
     Parameters
     ----------
     casts : list of str
@@ -175,38 +181,42 @@ def make_time_files(casts, datadir, user_cfg):
     """
     log.info("Generating time.pkl files")
     # validate time directory
-    time_dir = validate_dir(Path(datadir, 'time'), create=True)
+    time_dir = validate_dir(Path(datadir, "time"), create=True)
     # groundwork for writing any new details or offsets
-    details_file = Path(datadir, 'logs/cast_details.csv')
-    offsets_file = Path(datadir, 'logs/ondeck_pressure.csv')
+    details_file = Path(datadir, "logs/cast_details.csv")
+    offsets_file = Path(datadir, "logs/ondeck_pressure.csv")
     new_casts = False
     if details_file.exists():
-        cast_details_all = pd.read_csv(details_file, dtype='str')
+        cast_details_all = pd.read_csv(details_file, dtype="str")
     else:
         cast_details_all = pd.DataFrame()
     if offsets_file.exists():
-        p_offsets_all = pd.read_csv(offsets_file, dtype='str')
+        p_offsets_all = pd.read_csv(offsets_file, dtype="str")
     else:
         p_offsets_all = pd.DataFrame()
 
     # process new casts one by one
     for cast_id in casts:
-        time_file = Path(time_dir, '%s_time.pkl' % cast_id)
+        time_file = Path(time_dir, "%s_time.pkl" % cast_id)
         if not time_file.exists():
             new_casts = True
             cast = Cast(cast_id, datadir)
-            cast.p_col = 'CTDPRS'
+            cast.p_col = "CTDPRS"
             # Apply smoothing filter
-            cast.filter(cast.proc,
-                        win_size=(user_cfg.filter_win * user_cfg.freq),
-                        win_type=user_cfg.filter_type,
-                        cols=user_cfg.filter_cols)
+            cast.filter(
+                cast.proc,
+                win_size=(user_cfg.filter_win * user_cfg.freq),
+                win_type=user_cfg.filter_type,
+                cols=user_cfg.filter_cols,
+            )
             # Parse the downcast from the full cast
             cast.parse_downcast(cast.filtered)
             # Trim the soak period from the downcast
-            cast.trim_soak(cast.downcast,
-                           (user_cfg.soak_win * user_cfg.freq),
-                           user_cfg.soak_threshold)
+            cast.trim_soak(
+                cast.downcast,
+                (user_cfg.soak_win * user_cfg.freq),
+                user_cfg.soak_threshold,
+            )
             # save pkl file
             cast.trimmed.to_pickle(time_file)
 
@@ -221,21 +231,30 @@ def make_time_files(casts, datadir, user_cfg):
             # converted_df.interpolate(limit=24, limit_area="inside", inplace=True)
 
             # Merge in new details and offsets values
-            cast_details_all = (pd.concat([cast_details_all, cast.get_details()])
-                                .drop_duplicates(['cast_id'], keep='last')
-                                .sort_values(by=['cast_id']))
-            p_offsets_all = (pd.concat([p_offsets_all,
-                                       cast.get_pressure_offsets(cast.proc,
-                                                                 user_cfg.cond_threshold,
-                                                                 user_cfg.freq)])
-                             .drop_duplicates(['cast_id'], keep='last')
-                             .sort_values(by=['cast_id']))
+            cast_details_all = (
+                pd.concat([cast_details_all, cast.get_details()])
+                .drop_duplicates(["cast_id"], keep="last")
+                .sort_values(by=["cast_id"])
+            )
+            p_offsets_all = (
+                pd.concat(
+                    [
+                        p_offsets_all,
+                        cast.get_pressure_offsets(
+                            cast.proc, user_cfg.cond_threshold, user_cfg.freq
+                        ),
+                    ]
+                )
+                .drop_duplicates(["cast_id"], keep="last")
+                .sort_values(by=["cast_id"])
+            )
 
     # Wrap up...
     if new_casts is True:
         log.info("Saving deck pressures and cast details.")
-        cast_details_all.to_csv(Path(datadir, 'logs/cast_details.csv'), index=False)
-        p_offsets_all.to_csv(Path(datadir, 'logs/ondeck_pressure.csv'), index=False)
+        cast_details_all.to_csv(Path(datadir, "logs/cast_details.csv"), index=False)
+        p_offsets_all.to_csv(Path(datadir, "logs/ondeck_pressure.csv"), index=False)
+
 
 def make_btl_mean(ssscc_list):
     """
@@ -408,7 +427,6 @@ def convertFromSBEReader(sbeReader, ssscc):
     converted_df = pd.DataFrame()
 
     for meta in queue_metadata:
-
         col = f"{short_lookup[meta['sensor_id']]['short_name']}{meta['channel_pos']}"
         sensor_name = short_lookup[meta["sensor_id"]]["long_name"]
         sensor_units = short_lookup[meta["sensor_id"]]["units"]
@@ -476,7 +494,12 @@ def convertFromSBEReader(sbeReader, ssscc):
 
         ### Rinko block
         elif meta["sensor_id"] == "61":
-            if meta["sensor_info"]["SensorName"] in ("RinkoO2V", "RINKO", "RINKOO2", "Rinko02"):
+            if meta["sensor_info"]["SensorName"] in (
+                "RinkoO2V",
+                "RINKO",
+                "RINKOO2",
+                "Rinko02",
+            ):
                 log.info("Processing Rinko O2")
                 # hysteresis correct then pass through voltage (see Uchida, 2010)
                 coefs = {"H1": 0.0065, "H2": 5000, "H3": 2000, "offset": 0}
