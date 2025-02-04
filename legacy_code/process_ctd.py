@@ -357,7 +357,7 @@ def apply_pressure_offset(df, p_col="CTDPRS"):
         dtype={"cast_id": str},
         na_values="Started in Water",
     )
-    p_offset = _get_pressure_offset(p_log['pressure_start'], p_log['pressure_end'])
+    p_offset = _get_pressure_offset(p_log["pressure_start"], p_log["pressure_end"])
     df[p_col] += p_offset
     df[p_col + "_FLAG_W"] = 2
 
@@ -583,7 +583,6 @@ def export_ct1(df, ssscc_list):
     full_depth_df.drop_duplicates(subset="SSSCC", keep="first", inplace=True)
 
     for ssscc in ssscc_list:
-
         time_data = df[df["SSSCC"] == ssscc].copy()
         time_data = pressure_sequence(time_data)
         # switch oxygen primary sensor to rinko

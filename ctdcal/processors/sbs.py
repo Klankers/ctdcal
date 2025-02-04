@@ -95,8 +95,7 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
     sensor_df = pd.DataFrame(
         list(
             {
-                key: sensor.get("SensorID")
-                for key, sensor in xmlcon_sensors.items()
+                key: sensor.get("SensorID") for key, sensor in xmlcon_sensors.items()
             }.items()
         ),
         columns=["channel", "sensorID"],
@@ -154,15 +153,21 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
             case "55":
                 data_out = func(data.engineering[:, channel], coefs)
             case "45":
-                data_out = func(data.engineering[:, channel], data.meta_columns.sel(variable="sbe9_temp"), coefs)
+                data_out = func(
+                    data.engineering[:, channel],
+                    data.meta_columns.sel(variable="sbe9_temp"),
+                    coefs,
+                )
             case "3":
                 #   Dependent on SBE3 for appropriate line for 4C
                 if this_channel["new_names"].item()[-1].isdigit():
-                    t = science_temp.sel(channel = "CTDTMP2")
+                    t = science_temp.sel(channel="CTDTMP2")
                 else:
-                    t = science_temp.sel(channel = "CTDTMP")
+                    t = science_temp.sel(channel="CTDTMP")
                 p = science_temp.sel(channel="CTDPRS")
-                data_out = func(data.engineering[:, channel], t, p, coefs["Coefficients2"])
+                data_out = func(
+                    data.engineering[:, channel], t, p, coefs["Coefficients2"]
+                )
             # # case "38":
             # #     data_out = func(data.engineering[:, channel], coefs)
             # case _:
@@ -327,12 +332,21 @@ def sbe9(freq, t_probe, coefs, decimals=4):
         + coefs["T4"] * np.power(t_probe_new, 3)
     )
     w = 1 - T0 * T0 * freq_MHz * freq_MHz
-    p_dbar = 0.6894759 * (
-        (coefs["C1"] + coefs["C2"] * t_probe_new + coefs["C3"] * t_probe_new * t_probe_new)
-        * w
-        * (1 - (coefs["D1"] + coefs["D2"] * t_probe_new) * w)
-        - 14.7
-    ) * coefs["Slope"] + coefs["Offset"]
+    p_dbar = (
+        0.6894759
+        * (
+            (
+                coefs["C1"]
+                + coefs["C2"] * t_probe_new
+                + coefs["C3"] * t_probe_new * t_probe_new
+            )
+            * w
+            * (1 - (coefs["D1"] + coefs["D2"] * t_probe_new) * w)
+            - 14.7
+        )
+        * coefs["Slope"]
+        + coefs["Offset"]
+    )
     return np.around(p_dbar, decimals)
 
 

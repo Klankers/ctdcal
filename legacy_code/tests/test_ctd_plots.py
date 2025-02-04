@@ -77,7 +77,7 @@ def test_residual_vs_pressure(tmp_path):
 
         assert not file_path.exists()
         ctd_plots.residual_vs_pressure(x, x, x, stn=x, f_out=file_path)
-        assert file_path.exists()   # Verify that the file has been created
+        assert file_path.exists()  # Verify that the file has been created
 
 
 def test_residual_vs_station(tmp_path):
@@ -142,7 +142,7 @@ def test_residual_vs_station(tmp_path):
 
         assert not file_path.exists()
         ctd_plots.residual_vs_pressure(x, x, x, stn=x, f_out=file_path)
-        assert file_path.exists()   # Verify that the file has been created
+        assert file_path.exists()  # Verify that the file has been created
 
 
 def test_intermediate_residual_plot(tmp_path):
@@ -180,20 +180,21 @@ def test_intermediate_residual_plot(tmp_path):
 
         assert not file_path.exists()
         ctd_plots.residual_vs_pressure(x, x, x, stn=x, f_out=file_path)
-        assert file_path.exists()   # Verify that the file has been created
+        assert file_path.exists()  # Verify that the file has been created
 
 
 @pytest.fixture
 def example_data():
     return {
-        'param1': np.array([33, 33.5, 34, 35, 35.5]),
-        'param2': np.array([0.1, 10, 15, 20, 20]),
-        'label1': "Salinity",
-        'label2': "Temperature",
-        'stn': np.array(["1", "2", "3", "4", "5"]),
-        'tsS': np.array([33, 33.5, 34, 35, 35.5]),
-        'tsT': np.array([0.1, 10, 15, 20, 20]),
+        "param1": np.array([33, 33.5, 34, 35, 35.5]),
+        "param2": np.array([0.1, 10, 15, 20, 20]),
+        "label1": "Salinity",
+        "label2": "Temperature",
+        "stn": np.array(["1", "2", "3", "4", "5"]),
+        "tsS": np.array([33, 33.5, 34, 35, 35.5]),
+        "tsT": np.array([0.1, 10, 15, 20, 20]),
     }
+
 
 def test_param_vs_param(tmp_path, example_data):
     for ext in [".jpg", ".png", ".pdf"]:
@@ -203,27 +204,60 @@ def test_param_vs_param(tmp_path, example_data):
 
         #   Check that the plotted figure generates and is saved as expected
         assert not file_path.exists()
-        ax = ctd_plots.param_vs_param(example_data["param1"], example_data["label1"], 
-                                      example_data["param2"], example_data["label2"])   #   Should return figure axis
-        assert np.allclose(ax.get_xticks(), [32.5, 33. , 33.5, 34. , 34.5, 35. , 35.5, 36. ])
-        assert np.allclose(ax.get_yticks(), [-2.5,  0. ,  2.5,  5. ,  7.5, 10. , 12.5, 15. , 17.5, 20. , 22.5])
+        ax = ctd_plots.param_vs_param(
+            example_data["param1"],
+            example_data["label1"],
+            example_data["param2"],
+            example_data["label2"],
+        )  #   Should return figure axis
+        assert np.allclose(
+            ax.get_xticks(), [32.5, 33.0, 33.5, 34.0, 34.5, 35.0, 35.5, 36.0]
+        )
+        assert np.allclose(
+            ax.get_yticks(),
+            [-2.5, 0.0, 2.5, 5.0, 7.5, 10.0, 12.5, 15.0, 17.5, 20.0, 22.5],
+        )
         assert ax.get_xlabel() == example_data["label1"]
         assert ax.get_ylabel() == example_data["label2"]
-        ctd_plots.param_vs_param(example_data["param1"], example_data["label1"], 
-                                 example_data["param2"], example_data["label2"], f_out=file_path)
+        ctd_plots.param_vs_param(
+            example_data["param1"],
+            example_data["label1"],
+            example_data["param2"],
+            example_data["label2"],
+            f_out=file_path,
+        )
         assert file_path.exists()
 
         #   Now check that the TS contour plotting subroutine works
         file_path = output_path / f"TS{ext}"
         assert not file_path.exists()
-        ax = ctd_plots.param_vs_param(example_data["param1"], example_data["label1"], 
-                                      example_data["param2"], example_data["label2"], 
-                                      stn=example_data["stn"], tsT=example_data["tsT"], tsS=example_data["tsS"])
-        assert np.allclose(ax.get_xticks(), [32.5, 33. , 33.5, 34. , 34.5, 35. , 35.5, 36. ])  #   Should be unchanged
-        assert len(ax.collections[-1].get_paths()) == 9 #   Should generate 9 contours
-        assert len(ax.collections[-1].labelTexts) == 7  #   Should have text on 7 of the contour lines
-        assert ax.collections[-1].labelTexts[4].get_text() == "26.4"    #   The density calculations should have produced specific text on the 5th contour
-        ctd_plots.param_vs_param(example_data["param1"], example_data["label1"], 
-                                 example_data["param2"], example_data["label2"], 
-                                 f_out=file_path, stn=example_data["stn"], tsT=example_data["tsT"], tsS=example_data["tsS"])
+        ax = ctd_plots.param_vs_param(
+            example_data["param1"],
+            example_data["label1"],
+            example_data["param2"],
+            example_data["label2"],
+            stn=example_data["stn"],
+            tsT=example_data["tsT"],
+            tsS=example_data["tsS"],
+        )
+        assert np.allclose(
+            ax.get_xticks(), [32.5, 33.0, 33.5, 34.0, 34.5, 35.0, 35.5, 36.0]
+        )  #   Should be unchanged
+        assert len(ax.collections[-1].get_paths()) == 9  #   Should generate 9 contours
+        assert (
+            len(ax.collections[-1].labelTexts) == 7
+        )  #   Should have text on 7 of the contour lines
+        assert (
+            ax.collections[-1].labelTexts[4].get_text() == "26.4"
+        )  #   The density calculations should have produced specific text on the 5th contour
+        ctd_plots.param_vs_param(
+            example_data["param1"],
+            example_data["label1"],
+            example_data["param2"],
+            example_data["label2"],
+            f_out=file_path,
+            stn=example_data["stn"],
+            tsT=example_data["tsT"],
+            tsS=example_data["tsS"],
+        )
         assert file_path.exists()

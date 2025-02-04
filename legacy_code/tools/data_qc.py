@@ -237,7 +237,9 @@ upcast_sal.nonselection_glyph.fill_alpha = 1  # makes CTDSAL *not* change on sel
 threshes = {
     "CTDSAL": np.array([0.002, 0.005, 0.010, 0.020]),
     "CTDTMP": np.array([0.002, 0.005, 0.010, 0.020]),
-    "CTDOXY": np.array([0.625, 1.250, 2.500, 5.000]),   #   Not advised to follow this - biology happens
+    "CTDOXY": np.array(
+        [0.625, 1.250, 2.500, 5.000]
+    ),  #   Not advised to follow this - biology happens
 }
 
 #   Residuals plot
@@ -273,7 +275,6 @@ fig2.y_range = fig.y_range
 
 
 def update_selectors():
-
     print("exec update_selectors()")
     ctd_rows = ctd_data["SSSCC"] == station.value
     table_rows = btl_data["SSSCC"] == station.value
@@ -350,7 +351,6 @@ def update_selectors():
 
 
 def edit_flag():
-
     print("exec edit_flag()")
 
     btl_data.loc[
@@ -375,7 +375,6 @@ def edit_flag():
 
 
 def apply_flag():
-
     print("Applying flags")
 
     table_rows = btl_data["SSSCC"] == station.value
@@ -401,7 +400,6 @@ def apply_flag():
 
 
 def apply_comment():
-
     print("Applying Comments")
 
     table_rows = btl_data["SSSCC"] == station.value
@@ -427,7 +425,6 @@ def apply_comment():
 
 
 def save_data():
-
     print("Saving flagged data...")
 
     # get data from table
@@ -455,14 +452,12 @@ def exit_bokeh():
 
 
 def selected_from_plot(attr, old, new):
-
     # update using bottle number, not index
     # currently there is a bug if not all data from a cast are plotted
     src_table.selected.indices = new
 
 
 def selected_from_table(attr, old, new):
-
     # update using bottle number, not index
     # currently there is a bug if not all data from a cast are plotted
     btl_sal.data_source.selected.indices = new
@@ -569,9 +564,7 @@ data_table_changed = DataTable(
     sortable=False,
 )
 data_table_title = Div(text="""<b>All Station Data:</b>""", width=200, height=15)
-data_table_changed_title = Div(
-    text="""<b>Flagged Data:</b>""", width=200, height=15
-)
+data_table_changed_title = Div(text="""<b>Flagged Data:</b>""", width=200, height=15)
 
 controls = column(
     parameter,

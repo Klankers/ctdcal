@@ -1,6 +1,7 @@
 """
 Classes, definitions and utilities for use across ctdcal fitting modules.
 """
+
 import json
 
 from munch import Munch
@@ -12,6 +13,7 @@ class BottleFlags(Munch):
     for adding nodes and flag data, and loading or saving to/from a JSON file.
     TODO: Move this to ctdcal.flagging.common after reorg
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -27,7 +29,7 @@ class BottleFlags(Munch):
             names of node keys
         """
         key_dict = {k: [] for k in keys}
-        node = ({label: BottleFlags(key_dict)})
+        node = {label: BottleFlags(key_dict)}
         self.update(node)
 
     def update_node(self, **kwargs):
@@ -56,7 +58,7 @@ class BottleFlags(Munch):
         fname : str or Path-like
             filename
         """
-        with open(fname, 'w') as f:
+        with open(fname, "w") as f:
             f.write(self.toJSON(indent=4))
 
 
@@ -66,6 +68,7 @@ class NodeNotFoundError(Exception):
 
 # Function definitions
 # --------------------
+
 
 # BottleFlag wrangling
 # TODO: Move to ctdcal.flagging.common after reorg
@@ -103,7 +106,7 @@ def get_node(fname, label):
     -------
     BottleFlags object
     """
-    with open(fname, 'r') as f:
+    with open(fname, "r") as f:
         flags = json.load(f)
         if label in flags:
             return BottleFlags(flags[label])
@@ -128,9 +131,9 @@ def save_node(fname, node, label, create_new=False):
         If true, create a new node if it does not exist. Default is false.
 
     """
-    with open(fname, 'r') as f:
+    with open(fname, "r") as f:
         buf = f.read()
-    if buf == '':
+    if buf == "":
         # File exists but is empty
         flags = BottleFlags()
     else:

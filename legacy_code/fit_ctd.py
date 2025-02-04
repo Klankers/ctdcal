@@ -27,7 +27,9 @@ def load_fit_yaml(fname=f"{cfg.dirs['logs']}fit_coefs.yaml", to_object=False):
     """Load polynomial fit order information from .yaml file."""
 
     if not Path(fname).exists():
-        log.warning("Warning: Coefficients fit order YAML does not exist. Generating from scratch...")
+        log.warning(
+            "Warning: Coefficients fit order YAML does not exist. Generating from scratch..."
+        )
         generate_yaml()
 
     with open(fname, "r") as f:
@@ -38,46 +40,36 @@ def load_fit_yaml(fname=f"{cfg.dirs['logs']}fit_coefs.yaml", to_object=False):
     else:
         return ymlfile
 
-def generate_yaml(fname="fit_coefs.yaml", outdir=cfg.dirs['logs']):
+
+def generate_yaml(fname="fit_coefs.yaml", outdir=cfg.dirs["logs"]):
     """
     Create a default coeff. yaml file.
     """
     data = {
-        't1': {
-            'ssscc_t1': {
-                'P_order': 1,
-                'T_order': 0,
-                'zRange': "1000:6000"
+        "t1": {"ssscc_t1": {"P_order": 1, "T_order": 0, "zRange": "1000:6000"}},
+        "c1": {
+            "ssscc_c1": {
+                "P_order": 1,
+                "T_order": 0,
+                "C_order": 0,
+                "zRange": "1000:6000",
             }
         },
-        'c1': {
-            'ssscc_c1': {
-                'P_order': 1,
-                'T_order': 0,
-                'C_order': 0,
-                'zRange': "1000:6000"
+        "t2": {"ssscc_t1": {"P_order": 1, "T_order": 0, "zRange": "1000:6000"}},
+        "c2": {
+            "ssscc_c1": {
+                "P_order": 1,
+                "T_order": 0,
+                "C_order": 0,
+                "zRange": "1000:6000",
             }
         },
-        't2': {
-            'ssscc_t1': {
-                'P_order': 1,
-                'T_order': 0,
-                'zRange': "1000:6000"
-            }
-        },
-        'c2': {
-            'ssscc_c1': {
-                'P_order': 1,
-                'T_order': 0,
-                'C_order': 0,
-                'zRange': "1000:6000"
-            }
-        }
     }
 
     # Write the data to a YAML file
-    with open(outdir + fname, 'w') as file:
+    with open(outdir + fname, "w") as file:
         yaml.dump(data, file, default_flow_style=False)
+
 
 def write_fit_yaml():
     """For future use with automated fitting routine(s).
@@ -290,7 +282,7 @@ def multivariate_fit(y, *args, coef_names=None, const_name="c0"):
 
         series, order = arg
         for n in np.arange(1, order + 1)[::-1]:
-            rows.append(series ** n)  # n is np.int64 so series will cast to np.ndarray
+            rows.append(series**n)  # n is np.int64 so series will cast to np.ndarray
             names.append(f"{coef_root}{n}")
 
     # add constant offset term
@@ -526,13 +518,15 @@ def calibrate_cond(btl_df, time_df, user_cfg, ref_node):
     )
 
     # merge in handcoded salt flags
-    flag_file = Path(user_cfg.datadir, 'flag', user_cfg.bottleflags_man)
+    flag_file = Path(user_cfg.datadir, "flag", user_cfg.bottleflags_man)
     salt_flags_manual = None
     if flag_file.exists():
         try:
             salt_flags_manual = get_node(flag_file, ref_node)
         except NodeNotFoundError:
-            log.info("No previously flagged values for %s found in flag file." % ref_node)
+            log.info(
+                "No previously flagged values for %s found in flag file." % ref_node
+            )
     else:
         log.info("No pre-existing flag file found.")
 
@@ -540,9 +534,15 @@ def calibrate_cond(btl_df, time_df, user_cfg, ref_node):
         log.info("Merging previously flagged values for %s." % ref_node)
         salt_flags_manual_df = pd.DataFrame.from_dict(salt_flags_manual)
         salt_flags_manual_df = salt_flags_manual_df.rename(
-            columns={"cast_id": "SSSCC", "bottle_num": "btl_fire_num", "value": "SALNTY_FLAG_W"}
+            columns={
+                "cast_id": "SSSCC",
+                "bottle_num": "btl_fire_num",
+                "value": "SALNTY_FLAG_W",
+            }
         ).drop(columns=["notes"])
-        btl_df = btl_df.merge(salt_flags_manual_df, on=["SSSCC", "btl_fire_num"], how="left")
+        btl_df = btl_df.merge(
+            salt_flags_manual_df, on=["SSSCC", "btl_fire_num"], how="left"
+        )
         btl_df["SALNTY_FLAG_W"] = flagging.nan_values(
             btl_df["SALNTY"], old_flags=btl_df["SALNTY_FLAG_W"]
         )

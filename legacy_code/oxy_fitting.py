@@ -262,11 +262,9 @@ def calculate_bottle_oxygen(ssscc_list, ssscc_col, titr_vol, titr_temp, flask_nu
     V_reg = 2.0  # volume of reagents (mL)
 
     oxy_mL_L = (
-        (
-            ((titr_vol.values - params["V_blank"]) * params["V_KIO3"] * N_KIO3_20C * E)
-            / (params["V_std"] - params["V_blank"])
-            - 1000 * DO_reg
-        )
+        ((titr_vol.values - params["V_blank"]) * params["V_KIO3"] * N_KIO3_20C * E)
+        / (params["V_std"] - params["V_blank"])
+        - 1000 * DO_reg
     ) / (volumes - V_reg)
 
     return oxy_mL_L.values
@@ -559,7 +557,6 @@ def match_sigmas(
 
     # calculate sigma referenced to multiple depths
     for idx, p_ref in enumerate([0, 1000, 2000, 3000, 4000, 5000, 6000]):
-
         # pandas 1.2.1 ufunc issue workaround
         btl_inputs = np.broadcast_arrays(
             btl_data["SA"], btl_data["CTDTMP"], btl_data["CTDPRS"], p_ref
@@ -655,7 +652,6 @@ def sbe43_oxy_fit(merged_df, sbe_coef0=None, f_suffix=None):
     merged_df = merged_df[np.abs(merged_df["residual"]) <= cutoff].copy()
 
     while not thrown_values.empty:  # runs as long as there are thrown_values
-
         p0 = tuple(cfw_coefs)  # initialize coefficients with previous results
         weights = calculate_weights(merged_df["CTDPRS"])
         fit_data = tuple(merged_df[v] for v in fit_vars)  # merged_df changes each loop

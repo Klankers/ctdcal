@@ -4,7 +4,7 @@ import pytest
 from ctdcal import oxy_fitting, rinko
 
 #   Coefs from CTDCAL run
-coefs = (2.4837e+0, 1.7548e-1, -1.0020e-3, 3.1672e-2, -1.8098e-1, 2.685e-1, 9.7101e-2)
+coefs = (2.4837e0, 1.7548e-1, -1.0020e-3, 3.1672e-2, -1.8098e-1, 2.685e-1, 9.7101e-2)
 #   Fake pressure points
 pressure = np.array([50, 150, 250, 400, 800, 1500, 2500, 5000])
 refoxy = np.array([400, 160, 170, 200, 280, 335, 360, 400])
@@ -21,6 +21,7 @@ def test_rinko_DO():
 
     assert rinko.rinko_DO(p_prime, G, H) == 10 + 5 * 0.5
 
+
 def test_rinko_p_prime():
     #   Shared raw and temperature arrays for test cases
     #   Assuming "raw" are voltages
@@ -33,10 +34,20 @@ def test_rinko_p_prime():
     assert np.allclose(p_prime, p_solved)
 
     #   Now with 0297 coeffs
-    A, B, C, D, E, F, G, H = -4.367428e+01, 1.376636e+02, -3.647983e-01, 1.044300e-02, 4.300000e-03, 6.810000e-05, 0, 1
+    A, B, C, D, E, F, G, H = (
+        -4.367428e01,
+        1.376636e02,
+        -3.647983e-01,
+        1.044300e-02,
+        4.300000e-03,
+        6.810000e-05,
+        0,
+        1,
+    )
     p_solved = (A / (1 + D * (t - 25))) + (B / ((N - F) * (1 + D * (t - 25)) + C + F))
     p_prime = rinko.rinko_p_prime(N, t, A, B, C, D, E, F, G, H)
     assert np.allclose(p_prime, p_solved)
+
 
 def test_correct_pressure():
     #   Assign test cases
@@ -48,6 +59,7 @@ def test_correct_pressure():
     p_corr = rinko.correct_pressure(P, d, E)
 
     assert np.allclose(p_corr, p_solved)
+
 
 def test_salinity_correction():
     #   Assign test cases
@@ -61,8 +73,7 @@ def test_salinity_correction():
     C0 = -4.88682e-7
     T_scaled = np.log((298.15 - T) / (273.15 + T))
     DO_sc_manual = DO_c * np.exp(
-        S * (B0 + (B1 * T_scaled) + (B2 * T_scaled ** 2) + (B3 * T_scaled ** 3))
-        + C0 * S ** 2
+        S * (B0 + (B1 * T_scaled) + (B2 * T_scaled**2) + (B3 * T_scaled**3)) + C0 * S**2
     )
 
     DO_sc = rinko.salinity_correction(DO_c, T, S)
@@ -73,12 +84,13 @@ def test_salinity_correction():
     DO_sc = rinko.salinity_correction(DO_c, T, S)
     assert np.isnan(DO_sc[1])
 
+
 @pytest.mark.parametrize("coefs, inputs", [(coefs, inputs)])
 def test_Uchida_DO_eq(coefs, inputs):
     V_r, P, T, S, o2_sol = inputs
-    K_sv = coefs[0] + (coefs[1] * T) + (coefs[2] * T ** 2)
-    V0 = (1 + coefs[3] * T)
-    Vc = (coefs[4] + coefs[5] * V_r)
+    K_sv = coefs[0] + (coefs[1] * T) + (coefs[2] * T**2)
+    V0 = 1 + coefs[3] * T
+    Vc = coefs[4] + coefs[5] * V_r
     o2_sat = ((V0 / Vc) - 1) / K_sv
     DO = o2_sat * o2_sol
     DO_c = DO * (1 + coefs[6] * P / 1000) ** (1 / 3)
@@ -87,13 +99,15 @@ def test_Uchida_DO_eq(coefs, inputs):
     DO_sc = rinko._Uchida_DO_eq(coefs, inputs)
     assert np.allclose(DO_sc, DO_sc_manual)
 
-@pytest.mark.parametrize("coefs, pressure, inputs, refoxy", [(coefs, pressure, inputs, refoxy)])
-def oxy_weighted_residual(coefs, weights, inputs, refoxy, pressure):
 
+@pytest.mark.parametrize(
+    "coefs, pressure, inputs, refoxy", [(coefs, pressure, inputs, refoxy)]
+)
+def oxy_weighted_residual(coefs, weights, inputs, refoxy, pressure):
     weights = oxy_fitting.calculate_weights(pressure)
     residuals_manual = np.sum(
         (weights * (refoxy - rinko._Uchida_DO_eq(coefs, inputs)) ** 2)
-    ) / np.sum(weights ** 2)
+    ) / np.sum(weights**2)
 
     residuals = oxy_weighted_residual(coefs, weights, inputs, refoxy, pressure)
 

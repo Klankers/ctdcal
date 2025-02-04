@@ -35,8 +35,7 @@ def _prepare_fit_data(df, param, ref_param, zRange=None):
     if zRange is not None:
         zMin, zMax = zRange.split(":")
         good_data = good_data[
-            (good_data["CTDPRS"] > int(zMin))
-            & (good_data["CTDPRS"] < int(zMax))
+            (good_data["CTDPRS"] > int(zMin)) & (good_data["CTDPRS"] < int(zMax))
         ]
 
     good_data["Diff"] = good_data[ref_param] - good_data[param]

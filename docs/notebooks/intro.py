@@ -39,6 +39,7 @@ pl.rcParams["figure.figsize"] = [15, 8]
 Then, define a function that creates a pretty graph:
 """
 
+
 # %%
 def SineAndCosineWaves():
     # Get a large number of X values for a nice smooth curve. Using Pi as np.sin requires radians...

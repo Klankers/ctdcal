@@ -161,12 +161,11 @@ from ctdcal.processors import sbs
 
 #   hex_path = Path("00102.hex")
 
+
 def run_wrapper() -> xr.Dataset:
     #   Load the data from the odfsbe reader as a xarray.Dataset
     data = sbereader.odf_wrapper("00102.hex")
     xmlcon_box, xmlcon_sensors = xmlcon_junk.parse_xmlcon(data.xmlcon)
-    data = sbs.convert_science(
-        data, xmlcon_sensors
-    )
+    data = sbs.convert_science(data, xmlcon_sensors)
 
     return data

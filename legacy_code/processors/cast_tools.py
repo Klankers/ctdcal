@@ -1,6 +1,7 @@
 """
 Tools for cleaning up converted and processed cast data.
 """
+
 import logging
 from pathlib import Path
 
@@ -36,6 +37,7 @@ class Cast(object):
     ondeck_trimmed : DataFrame
         Full cast data trimmed of on-deck intervals.
     """
+
     def __init__(self, cast_id, datadir):
         self.cast_id = cast_id
         self.datadir = datadir
@@ -51,7 +53,7 @@ class Cast(object):
         """
         Read the processed data into a dataframe.
         """
-        f = Path(self.datadir, 'converted/%s.pkl' % self.cast_id)
+        f = Path(self.datadir, "converted/%s.pkl" % self.cast_id)
         self.proc = pd.read_pickle(f)
 
     def parse_downcast(self, data):
@@ -66,7 +68,7 @@ class Cast(object):
         """
         if self.p_col is None:
             raise AttributeError("Pressure column 'p_col' attribute is not set")
-        downcast = data.loc[:self.proc[self.p_col].idxmax()].copy()
+        downcast = data.loc[: self.proc[self.p_col].idxmax()].copy()
         self.downcast = downcast
 
     def filter(self, data, win_size, win_type="triangle", cols=None):
@@ -95,7 +97,10 @@ class Cast(object):
         elif win_type == "triangle":
             win = sig.windows.triang(win_size)
         else:
-            raise AttributeError('Error filtering cast %s! No filter of type %s found.' % (self.cast_id, win_type))
+            raise AttributeError(
+                "Error filtering cast %s! No filter of type %s found."
+                % (self.cast_id, win_type)
+            )
         for col in cols:
             data[col] = sig.convolve(data[col], win, mode="same") / np.sum(win)
         self.filtered = data
@@ -121,8 +126,10 @@ class Cast(object):
 
         # Adapted from: https://stackoverflow.com/questions/48023982/pandas-finding-local-max-and-min
         # Find local peaks
-        local_min_vals = data.loc[data[self.p_col] == data[self.p_col].rolling(win_size, center=True).min(),
-                                  [self.p_col]]
+        local_min_vals = data.loc[
+            data[self.p_col] == data[self.p_col].rolling(win_size, center=True).min(),
+            [self.p_col],
+        ]
 
         # apply max_soak threshold to filter false positives...
         i = local_min_vals.index[-1]
@@ -130,7 +137,10 @@ class Cast(object):
             try:
                 local_min_vals.drop(i, inplace=True)
             except KeyError:
-                log.warning('Whoa, trouble finding the soak on cast %s! Nothing was trimmed!' % self.cast_id)
+                log.warning(
+                    "Whoa, trouble finding the soak on cast %s! Nothing was trimmed!"
+                    % self.cast_id
+                )
                 return
             i = local_min_vals.index[-1]
 
@@ -165,21 +175,27 @@ class Cast(object):
         if self.trimmed is None:
             raise AttributeError("'trimmed' attribute is not set.")
         data = pd.DataFrame()
-        data['cast_id'] = [self.cast_id]
+        data["cast_id"] = [self.cast_id]
         best_full_cast = self.filtered if self.filtered is not None else self.proc
         # TODO: the below uses all very odf/go-ship/seabird-specific column labels
         #   which should ultimately be replaced with standardized names.
-        data['start_time'] = [float(self.trimmed["scan_datetime"].head(1))]
+        data["start_time"] = [float(self.trimmed["scan_datetime"].head(1))]
         p_max_ind = best_full_cast[self.p_col].argmax()
-        data['bottom_time'] = [float(best_full_cast["scan_datetime"][p_max_ind])]
-        data['end_time'] = [float(best_full_cast["scan_datetime"].tail(1))]
-        data['start_pressure'] = [float(np.around(self.trimmed[self.p_col].head(1), 4))]
-        data['max_pressure'] = [float(np.around(self.trimmed[self.p_col].max(), 4))]
-        if 'ALT' in self.proc.columns:
-            data['altimeter_bottom'] = [float(np.around(best_full_cast["ALT"][p_max_ind], 4))]
-        if all(col in self.proc.columns for col in ['GPSLAT', 'GPSLON']):
-            data['latitude'] = [float(np.around(best_full_cast["GPSLAT"][p_max_ind], 4))]
-            data['longitude'] = [float(np.around(best_full_cast["GPSLON"][p_max_ind], 4))]
+        data["bottom_time"] = [float(best_full_cast["scan_datetime"][p_max_ind])]
+        data["end_time"] = [float(best_full_cast["scan_datetime"].tail(1))]
+        data["start_pressure"] = [float(np.around(self.trimmed[self.p_col].head(1), 4))]
+        data["max_pressure"] = [float(np.around(self.trimmed[self.p_col].max(), 4))]
+        if "ALT" in self.proc.columns:
+            data["altimeter_bottom"] = [
+                float(np.around(best_full_cast["ALT"][p_max_ind], 4))
+            ]
+        if all(col in self.proc.columns for col in ["GPSLAT", "GPSLON"]):
+            data["latitude"] = [
+                float(np.around(best_full_cast["GPSLAT"][p_max_ind], 4))
+            ]
+            data["longitude"] = [
+                float(np.around(best_full_cast["GPSLON"][p_max_ind], 4))
+            ]
         return data
 
     def get_pressure_offsets(self, data, threshold, sample_freq):
@@ -210,39 +226,41 @@ class Cast(object):
         #     on WOCE colnames
 
         # Half minute
-        time_delay = sample_freq * 30  # time to let CTD pressure reading settle/sit on deck
+        time_delay = (
+            sample_freq * 30
+        )  # time to let CTD pressure reading settle/sit on deck
         # split dataframe into upcast/downcast
         downcast = data.iloc[: (data[self.p_col].argmax() + 1)]
-        upcast = data.iloc[(data[self.p_col].argmax() + 1):]
+        upcast = data.iloc[(data[self.p_col].argmax() + 1) :]
         # Search each half of df for minimum conductivity
         # threshold to identify when rosette is out of water
         start_df = downcast.loc[
-            (downcast['CTDCOND1'] < threshold)
-            & (downcast['CTDCOND2'] < threshold),
+            (downcast["CTDCOND1"] < threshold) & (downcast["CTDCOND2"] < threshold),
             self.p_col,
         ]
         end_df = upcast.loc[
-            (upcast['CTDCOND1'] < threshold)
-            & (upcast['CTDCOND2'] < threshold),
+            (upcast["CTDCOND1"] < threshold) & (upcast["CTDCOND2"] < threshold),
             self.p_col,
         ]
         # Evaluate starting and ending pressures
         start_samples = len(start_df)
         if start_samples > time_delay:
-            start_p = np.average(start_df.iloc[(sample_freq * 2): (start_samples - time_delay)])
+            start_p = np.average(
+                start_df.iloc[(sample_freq * 2) : (start_samples - time_delay)]
+            )
         else:
             start_seconds = start_samples / sample_freq
             log.warning(
-                    f"{self.cast_id}: Only {start_seconds:0.1f} seconds of start pressure averaged."
+                f"{self.cast_id}: Only {start_seconds:0.1f} seconds of start pressure averaged."
             )
-            start_p = np.average(start_df.iloc[(sample_freq * 2):start_samples])
+            start_p = np.average(start_df.iloc[(sample_freq * 2) : start_samples])
         end_samples = len(end_df)
         if end_samples > time_delay:
             end_p = np.average(end_df.iloc[time_delay:])
         else:
             end_seconds = end_samples / sample_freq
             log.warning(
-                    f"{self.cast_id}: Only {end_seconds:0.1f} seconds of end pressure averaged."
+                f"{self.cast_id}: Only {end_seconds:0.1f} seconds of end pressure averaged."
             )
             end_p = np.average(end_df)  # just average whatever there is
         # Warn if failures
@@ -252,9 +270,9 @@ class Cast(object):
             log.warning("Failed to find ending deck pressure.")
 
         df = pd.DataFrame()
-        df['cast_id'] = [self.cast_id]
-        df['pressure_start'] = [start_p]
-        df['pressure_end'] = [end_p]
+        df["cast_id"] = [self.cast_id]
+        df["pressure_start"] = [start_p]
+        df["pressure_end"] = [end_p]
         return df
 
     def trim_ondeck(self, data, threshold):
@@ -272,17 +290,17 @@ class Cast(object):
         # split dataframe into upcast/downcast
         # split dataframe into upcast/downcast
         downcast = data.iloc[: (data[self.p_col].argmax() + 1)]
-        upcast = data.iloc[(data[self.p_col].argmax() + 1):]
+        upcast = data.iloc[(data[self.p_col].argmax() + 1) :]
         # Search each half of df for minimum conductivity
         # threshold to identify when rosette is out of water
         start_df = downcast.loc[
-            (downcast['CTDCOND1'] < threshold)
-            & (downcast['CTDCOND2'] < threshold),
+            (downcast["CTDCOND1"] < threshold) & (downcast["CTDCOND2"] < threshold),
             self.p_col,
         ]
         end_df = upcast.loc[
-            (upcast['CTDCOND1'] < threshold)
-            & (upcast['CTDCOND2'] < threshold),
+            (upcast["CTDCOND1"] < threshold) & (upcast["CTDCOND2"] < threshold),
             self.p_col,
         ]
-        self.ondeck_trimmed = data.iloc[start_df.index.max() : end_df.index.min()].copy()
+        self.ondeck_trimmed = data.iloc[
+            start_df.index.max() : end_df.index.min()
+        ].copy()

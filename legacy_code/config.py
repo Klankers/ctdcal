@@ -6,7 +6,7 @@ import yaml
 
 # with resources.open_text("ctdcal", "user_settings.yaml") as f:    #   Python 3.8
 #     settings = yaml.safe_load(f)
-with resources.files("ctdcal").joinpath("user_settings.yaml").open('r') as f:
+with resources.files("ctdcal").joinpath("user_settings.yaml").open("r") as f:
     settings = yaml.safe_load(f)
 
 # Unpack user settings (any sanitizing/checks needed? probably)
@@ -18,7 +18,7 @@ ctd_outputs = settings["ctd_outputs"]
 # CTD file (.ct1) variable outputs
 # move elsewhere when xarray is implemented
 ctd_col_names, ctd_col_units = [], []
-for (param, attrs) in ctd_outputs.items():
+for param, attrs in ctd_outputs.items():
     if param == "CTDPRS":
         ctd_col_names += [param]
         ctd_col_units += [attrs["units"]]

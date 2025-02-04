@@ -276,15 +276,16 @@ def test_seapoint_fluor():
     with pytest.raises(KeyError, match="Offset"):
         eqs.seapoint_fluor(volts, make_coefs(coefs[:-1]))
 
+
 def test_sbe_flntu_chl(caplog):
     volts = np.concatenate((np.zeros(10), np.array([1, 2, 3, 4, 5])))
-    coefs = {'ScaleFactor':11, 'Vblank':0.079}
+    coefs = {"ScaleFactor": 11, "Vblank": 0.079}
 
     chl = eqs.sbe_flntu_chl(volts, coefs)
 
     #   Test hand-calculated values with example coefs
     assert all(chl[0:10] == -0.869)
-    assert chl[-1] == 54.131 
+    assert chl[-1] == 54.131
 
     # check there are no warnings if volts are float with no zeroes
     no_warn = eqs.sbe_flntu_chl(np.ones(len(volts)), make_coefs(coefs, value=1))
@@ -302,13 +303,14 @@ def test_sbe_flntu_chl(caplog):
 
     # error saying which keys are missing from coef dict
     with pytest.raises(KeyError, match="Vblank"):
-        eqs.sbe_flntu_chl(volts, {"ScaleFactor":1, "dark_counts":1})
+        eqs.sbe_flntu_chl(volts, {"ScaleFactor": 1, "dark_counts": 1})
         assert "dictionary missing keys" in caplog.records[-1].message
+
 
 def test_sbe_flntu_ntu(caplog):
     #   Practically identical to sbe_flntu_chl
     volts = np.concatenate((np.zeros(10), np.array([1, 2, 3, 4, 5])))
-    coefs = {'ScaleFactor':5, 'DarkVoltage':0.050}
+    coefs = {"ScaleFactor": 5, "DarkVoltage": 0.050}
 
     ntu = eqs.sbe_flntu_ntu(volts, coefs)
 
@@ -332,5 +334,5 @@ def test_sbe_flntu_ntu(caplog):
 
     # error saying which keys are missing from coef dict
     with pytest.raises(KeyError, match="DarkVoltage"):
-        eqs.sbe_flntu_ntu(volts, {"ScaleFactor":1, "dark_counts":1})
+        eqs.sbe_flntu_ntu(volts, {"ScaleFactor": 1, "dark_counts": 1})
         assert "dictionary missing keys" in caplog.records[-1].message

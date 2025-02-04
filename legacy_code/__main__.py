@@ -69,7 +69,7 @@ def cli(debug):
 def init():
     """Setup data folder with appropriate subfolders"""
 
-    log.info(f"Building default /data/ directories: \n {*cfg.dirs.keys(),}")
+    log.info(f"Building default /data/ directories: \n {(*cfg.dirs.keys(),)}")
 
     for sub_dir in cfg.dirs.values():
         Path(sub_dir).mkdir(parents=True)

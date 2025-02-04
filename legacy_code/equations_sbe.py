@@ -426,7 +426,7 @@ def seapoint_fluor(volts, coefs, decimals=6):
     return fluoro
 
 
-def sbe_flntu_chl(volts, coefs, decimals = 4):
+def sbe_flntu_chl(volts, coefs, decimals=4):
     """
     SBE equation for converting SeaBird fluorometer and nepholometric turbidity
     combo sensor's chlorophyll and CDOM fluorometer.
@@ -444,7 +444,7 @@ def sbe_flntu_chl(volts, coefs, decimals = 4):
     -------
     chl : array-like
         Converted chlorophyll concentration in μg/l
-    
+
     Notes:
     ------
     ScaleFactor is usually given in volts, whereas Vblank are in μg/l/V in
@@ -457,7 +457,7 @@ def sbe_flntu_chl(volts, coefs, decimals = 4):
     return chl
 
 
-def sbe_flntu_ntu(volts, coefs, decimals = 4): 
+def sbe_flntu_ntu(volts, coefs, decimals=4):
     """
     SBE equation for converting SeaBird fluorometer and nepholometric turbidity
     combo sensor's turbidity channel.
@@ -475,7 +475,7 @@ def sbe_flntu_ntu(volts, coefs, decimals = 4):
     -------
     turb : array-like
         Converted turbidity (units expressed in NTU)
-    
+
     Notes:
     ------
     ScaleFactor is usually given in volts, whereas DarkVoltage are in NTU/V in

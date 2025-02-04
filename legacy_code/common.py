@@ -1,6 +1,7 @@
 """
 Classes, definitions and utilities for all ctdcal modules
 """
+
 from pathlib import Path
 import yaml
 
@@ -9,6 +10,7 @@ from munch import munchify
 
 # Function definitions
 # --------------------
+
 
 # Configuration
 def load_user_config(cfgfile):
@@ -25,7 +27,7 @@ def load_user_config(cfgfile):
     -------
     Munch object
     """
-    with open(cfgfile, 'r') as f:
+    with open(cfgfile, "r") as f:
         cfg = yaml.safe_load(f)
         return munchify(cfg)
 

@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 def plot_engineering_runner(
     data, var_name="engineering", output_path="data/plots", format="svg"
 ):
-
     fname, _ = os.path.splitext(data.attrs["hex_filename"])
     fname = fname + "." + format
     os.makedirs(output_path, exist_ok=True)

@@ -19,12 +19,11 @@ import logging
 
 log = logging.getLogger(__name__)
 
-USERCONFIG = 'ctdcal/cfg.yaml'
+USERCONFIG = "ctdcal/cfg.yaml"
 user_cfg = load_user_config(validate_file(USERCONFIG))
 
 
 def odf_process_all():
-
     #####
     # Step 0: Load and define necessary variables
     #####
@@ -80,10 +79,12 @@ def odf_process_all():
     fit_ctd.calibrate_temp(btl_data_all, time_data_all)
 
     # calibrate conductivity against reference
-    btl_data_all, time_data_all = fit_ctd.calibrate_cond(btl_data_all, time_data_all, user_cfg, 'salt')
+    btl_data_all, time_data_all = fit_ctd.calibrate_cond(
+        btl_data_all, time_data_all, user_cfg, "salt"
+    )
 
     # calculate params needs for oxy/rinko calibration
-    oxy_fitting.prepare_oxy(btl_data_all, time_data_all, ssscc_list, user_cfg, 'oxygen')
+    oxy_fitting.prepare_oxy(btl_data_all, time_data_all, ssscc_list, user_cfg, "oxygen")
 
     # calibrate oxygen against reference
     oxy_fitting.calibrate_oxy(btl_data_all, time_data_all, ssscc_list)

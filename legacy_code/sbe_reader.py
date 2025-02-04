@@ -604,9 +604,10 @@ class SBEReader:
 
     @classmethod
     def from_paths(cls, raw_hex_path, xml_config_path, encoding="cp437"):
-        with open(raw_hex_path, encoding=encoding) as raw_hex_file, open(
-            xml_config_path, encoding=encoding
-        ) as xml_config_file:
+        with (
+            open(raw_hex_path, encoding=encoding) as raw_hex_file,
+            open(xml_config_path, encoding=encoding) as xml_config_file,
+        ):
             return cls(raw_hex_file.read(), xml_config_file.read())
 
     @property

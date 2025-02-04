@@ -13,7 +13,6 @@ btl_df = pd.read_csv(btl_file)
 
 
 def plot_residuals(outdir="data/report_figs/", ext=".pdf"):
-
     #################################################################
     ##### Here lies the temperature plots, long may they rest.  #####
     #################################################################
@@ -192,7 +191,6 @@ def plot_residuals(outdir="data/report_figs/", ext=".pdf"):
 
 
 def pressure_offset():
-
     data = pd.read_csv("data/logs/ondeck_pressure.csv")
     print(f"Average deck pressure:\n{data.describe().loc[['min', 'max', 'mean']]}\n")
     print(
@@ -206,7 +204,6 @@ def fit_coefficients():
 
 
 def calculate_residuals():
-
     log.info("Calculating T/C/O residuals\n")
 
     low_grad_rows = (btl_df["CTDTMP1"] - btl_df["CTDTMP2"]).abs() < 0.002

@@ -1,6 +1,7 @@
 """
 A module for plotting and visualizing the CTDCAL data products.
 """
+
 import logging
 from pathlib import Path
 
@@ -225,14 +226,16 @@ def _intermediate_residual_plot(
     return _save_fig(ax, f_out)
 
 
-def param_vs_param(param1, label1, param2, label2, f_out=None, stn=None, tsT=None, tsS=None):
+def param_vs_param(
+    param1, label1, param2, label2, f_out=None, stn=None, tsT=None, tsS=None
+):
     """
     Scatter plots two CTD parameters against each other with support for TS plotting.
 
     Support for bottle or time data.
 
     Most TS plots have temperature on the Y axis and salinity on the X axis.
-    
+
     Parameters
     ----------
     param1 : array-like of float
@@ -246,7 +249,7 @@ def param_vs_param(param1, label1, param2, label2, f_out=None, stn=None, tsT=Non
     f_out : String, optional
         Path and filename to save TS plot
     stn : array-like, optional
-        An array of station numbers or labels for 
+        An array of station numbers or labels for
     tsT : array-like of float, optional
         Temperature array for use in density gradient calculations
     tsS : array-like of float, optional
@@ -259,11 +262,13 @@ def param_vs_param(param1, label1, param2, label2, f_out=None, stn=None, tsT=Non
     if stn is not None:
         stn = np.array(stn)  # Ensure stn is a NumPy array
         sc = ax.scatter(param1, param2, c=stn.astype(int), marker="+")
-        sc.set_clim(vmin=stn.astype(int).min(), vmax=stn.astype(int).max()) #   Color mapping based on station number
+        sc.set_clim(
+            vmin=stn.astype(int).min(), vmax=stn.astype(int).max()
+        )  #   Color mapping based on station number
         cbar = plt.colorbar(sc, format=ticker.FormatStrFormatter("%.0f"))
         cbar.set_label("Station/Cast Label")
     else:
-        sc = ax.scatter(param1, param2, color='black', marker="+")
+        sc = ax.scatter(param1, param2, color="black", marker="+")
 
     ax.set_xlabel(label1)
     ax.set_ylabel(label2)
@@ -290,4 +295,6 @@ def param_vs_param(param1, label1, param2, label2, f_out=None, stn=None, tsT=Non
         cs = plt.contour(si, ti, dens, linestyles="dashed", colors="k")
         plt.clabel(cs, fontsize=12, inline=1, fmt="%0.1f")
 
-    return _save_fig(ax, f_out) #   Save the figure if f_out is given else return the scatter axis
+    return _save_fig(
+        ax, f_out
+    )  #   Save the figure if f_out is given else return the scatter axis
