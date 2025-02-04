@@ -149,7 +149,7 @@ without the user ever needing to open a text editor.
 #   Temporary: Add odfsbe to path until it is available through pypi
 import sys
 import xarray as xr
-import pathlib as Path
+from pathlib import Path
 
 sys.path.append("/Users/ajmau/other_code/odfsbe/odf/sbe")
 import __init__ as sbereader

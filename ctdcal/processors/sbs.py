@@ -139,7 +139,7 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
     science_temp = xr.DataArray(
         np.zeros((len(data.engineering), len(sensor_df))),
         dims=("scan", "channel"),
-        coords={"channel": channel_names},
+        coords={"channel": sensor_df.sort_values("channel")["new_names"]},
     )
 
     #   Ordered by priority, SBE3 first, then 9, 4, 43, aux
@@ -148,7 +148,7 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
         func = function_map.get(this_channel["function"].iloc[0])
         coefs = xmlcon_sensors[channel]
         col_name = this_channel["short_name"].iloc[0]
-        print(f"XMLCON entry: Channel {channel}, {col_name}")
+        print(f"XMLCON entry: Channel {channel}, {col_name}, {this_channel["new_names"].iloc[0]}")
         match this_channel["sensorID"].iloc[0]:
             case "55":
                 data_out = func(data.engineering[:, channel], coefs)
