@@ -1,5 +1,9 @@
 """
-Do an example:
+Scripts and wrappers for normal ODF subroutines.
+
+Below is a long, arduous list of what needs to happen during a typical ODF
+run of CTDCAL:
+
 --Pre-run checks--
 * Init overall logger (reporting)
 * Check files for changes (common/util)
@@ -33,7 +37,7 @@ Do an example:
 * Assemble master "reference" data (util)
 * Convert new .HEX to .NC, save intermediate file (processors)
     * Consists of entire dataset prior to any manipulations - hexadecimal, engineering units, science units
-    * Assembled .BL -> What we know about the 
+    * Assembled .BL -> What we know about:
     * The 3 core config files
     * Assembled discrete "reference" data: REFT, SALT, OXY, with two sets of standards
 * Do R2R style checks (reporting), generate stoplights (reporting)
@@ -141,3 +145,28 @@ Do an example:
 In the future, this can all be made into a YAML file, where every routine can be easily assembled and referenced for easy reordering
 without the user ever needing to open a text editor.
 """
+
+#   Temporary: Add odfsbe to path until it is available through pypi
+import sys
+import xarray as xr
+import pathlib as Path
+
+sys.path.append("/Users/ajmau/other_code/odfsbe/odf/sbe")
+import __init__ as sbereader
+import accessors as xmlcon_junk
+
+from ctdcal.processors import sbs
+
+# from sbereader import odf_wrapper
+
+#   hex_path = Path("00102.hex")
+
+def run_wrapper() -> xr.Dataset:
+    #   Load the data from the odfsbe reader as a xarray.Dataset
+    data = sbereader.odf_wrapper("00102.hex")
+    xmlcon_box, xmlcon_sensors = xmlcon_junk.parse_xmlcon(data.xmlcon)
+    data = sbs.convert_science(
+        data, xmlcon_sensors
+    )
+
+    return data
