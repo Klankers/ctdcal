@@ -31,7 +31,7 @@
   long_name: Seapoint Fluorometer
   units: 0-5VDC
   type: float64
-  function: sbs.seapoint_fluoro
+  function: sbs.seapoint_fluor
   priority: 4
 "27":
   short_name: FREE
