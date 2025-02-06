@@ -112,21 +112,17 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
     ]
     sensor_df = sensor_df.sort_values(by="priority", ascending=True)  # Sort by priority
 
-    #   Mapping functions from the lookup_table.yaml
-    function_map = {
-        "sbs.sbe3": sbe3,
-        "sbs.sbe4": sbe4,
-        "sbs.sbe9": sbe9,
-        "sbs.sbe43": sbe43,
-        "sbs.sbe_altimeter": sbe_altimeter,
-        "sbs.seapoint_fluor": seapoint_fluor,
-        "sbs.v_out": v_out,
-    }
-
-    #   Build column names, look for multiple channels
-    channel_names = [
-        sensor_lookup[sensor]["short_name"] for sensor in sensor_df.sensorID
-    ]
+    #   Reassign the RINKO and misc. voltage channels (IDs 27, 61)
+    #   which could be defined under multiple sensor types
+    for idx, _ in sensor_df.loc[
+        sensor_df["short_name"].isin(["FREE", "U_DEF_poly"])].iterrows():
+        if "rinko" in xmlcon_sensors[idx]["SensorName"].lower():
+            sensor_df.loc[idx, "short_name"] = "RINKO"
+        elif xmlcon_sensors[idx]["SensorName"] != "":
+            sensor_df.loc[idx, "short_name"] = xmlcon_sensors[idx]["SensorName"]
+        
+    #   Build "new" column names, looking for multiple channels
+    channel_names = sensor_df["short_name"].tolist()
     name_tracker = {}  # Dictionary of short_name, #times
     for i in range(len(channel_names)):
         name = channel_names[i]
@@ -137,6 +133,17 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
             #   Don't rename if it hasn't been seen before
             name_tracker[name] = 1
     sensor_df["new_names"] = channel_names
+
+    #   Mapping functions from the lookup_table.yaml
+    function_map = {
+        "sbs.sbe3": sbe3,
+        "sbs.sbe4": sbe4,
+        "sbs.sbe9": sbe9,
+        "sbs.sbe43": sbe43,
+        "sbs.sbe_altimeter": sbe_altimeter,
+        "sbs.seapoint_fluor": seapoint_fluor,
+        "sbs.v_out": v_out,
+    }
 
     #   Preallocate space, an empty array for science units
     science_temp = xr.DataArray(
@@ -197,10 +204,26 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
             case "11":
                 #   Seapoint fluorometer
                 data_out = func(data.engineering[:, channel], coefs)
-
+            case "61":
+                #   Generic v_out
+                if "rinko" in this_channel["new_names"].iloc[0].lower():
+                    #   If this is the first of the two rinko channels
+                    if not this_channel["new_names"].item()[-1].isdigit():
+                        # hysteresis correct then pass through oxy channel voltage (see Uchida, 2010)
+                        p = science_temp.sel(channel="CTDPRS")  # Already defined?
+                        data_out = sbe43_hysteresis_voltage(
+                            data.engineering[:, channel], p,
+                            {"H1": 0.0065, "H2": 5000, "H3": 2000, "offset": 0})
+                    else:
+                        #   otherwise output the rinko temperature as a voltage
+                        data_out = v_out(data.engineering[:, channel])
+                else:
+                    data_out = func(data.engineering[:, channel])
             case _:
                 #   Return the source voltage out
                 #   Add other routines as needed
+                # print(f"Unidentified function for {col_name}."
+                #         f"\nOutputting voltage, unmodified.")
                 data_out = func(data.engineering[:, channel])
 
         science_temp.loc[:, science_temp.channel[channel]] = data_out
