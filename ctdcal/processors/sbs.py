@@ -168,8 +168,33 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
                 data_out = func(
                     data.engineering[:, channel], t, p, coefs["Coefficients2"]
                 )
-            # # case "38":
-            # #     data_out = func(data.engineering[:, channel], coefs)
+            case "38":
+                #   In case of second SBE43
+                if this_channel["new_names"].item()[-1].isdigit():
+                    t = science_temp.sel(channel="CTDTMP2")
+                    c = science_temp.sel(channel="CTDCOND2")
+                else:
+                    t = science_temp.sel(channel="CTDTMP")
+                    c = science_temp.sel(channel="CTDCOND")
+                p = science_temp.sel(channel="CTDPRS")  #   Could already be defined
+                data_out = func(data.engineering[:, channel], p, t, c,
+                                coefs["CalibrationCoefficients2"], #   Use the 2007 equation
+                                lat=data.meta_columns.sel(variable="lat")[0].item(),
+                                lon=data.meta_columns.sel(variable="lon")[0].item(),
+                                hyst_check=True)
+                
+                    # V_corrected = sbe_eq.sbe43_hysteresis_voltage(
+                    #     raw_df[meta["column"]], p_array, coefs
+                    # )
+                    # converted_df[col] = sbe_eq.sbe43(
+                    #     V_corrected,
+                    #     p_array,
+                    #     t_array,
+                    #     c_array,
+                    #     coefs,
+                    #     lat=meta_df["GPSLAT"],
+                    #     lon=meta_df["GPSLON"],
+                    # )
             # case _:
             #     data_out = data.engineering[:, channel]
 
@@ -350,7 +375,7 @@ def sbe9(freq, t_probe, coefs, decimals=4):
     return np.around(p_dbar, decimals)
 
 
-def sbe43(volts, p, t, c, coefs, lat=0.0, lon=0.0, decimals=4):
+def sbe43(volts, p, t, c, coefs, lat=0.0, lon=0.0, decimals=4, hyst_check=False):
     # NOTE: lat/lon = 0 is not "acceptable" for GSW, come up with something else?
     """
     SBE equation for converting SBE43 engineering units to oxygen (ml/l).
@@ -372,14 +397,26 @@ def sbe43(volts, p, t, c, coefs, lat=0.0, lon=0.0, decimals=4):
         Latitude (decimal degrees north)
     lon : array-like, optional
         Longitude (decimal degrees)
+    hyst_check : boolean, optional
+        Whether to apply hysteresis correction to SBE43 voltage. Defaults to false.
 
     Returns
     -------
-    oxy_ml_l : array-like
-        Converted oxygen (mL/L)
+    oxy_umolkg : array-like
+        Converted oxygen (umol/kg)
+    # oxy_ml_l : array-like
+    #     Converted oxygen (mL/L)
     """
-    _check_coefs(coefs, ["Soc", "offset", "Tau20", "A", "B", "C", "E"])
-    volts = _check_volts(volts)
+    use_coefs = ["Soc", "offset", "Tau20", "A", "B", "C", "E"]
+    _check_coefs(coefs, use_coefs)
+    volts_original = _check_volts(volts)
+
+    for key in use_coefs:
+        coefs[key] = float(coefs[key])
+
+    if hyst_check:
+        volts = sbe43_hysteresis_voltage(volts_original, p, coefs)
+
     t_Kelvin = np.array(t) + 273.15
 
     SP = gsw.SP_from_C(c, t, p)
@@ -406,4 +443,109 @@ def sbe43(volts, p, t, c, coefs, lat=0.0, lon=0.0, decimals=4):
         * o2sol_ml_l
         * np.exp(coefs["E"] * np.array(p) / t_Kelvin)
     )
-    return np.around(oxy_ml_l, decimals)
+    oxy_umolkg = oxy_ml_to_umolkg(oxy_ml_l, sigma0)
+
+    return np.around(oxy_umolkg, decimals)
+
+def oxy_umolkg_to_ml(oxy_umol_kg, sigma0):
+    """Convert dissolved oxygen from units of micromol/kg to mL/L.
+
+    Parameters
+    ----------
+    oxy_umol_kg : array-like
+        Dissolved oxygen in units of [umol/kg]
+    sigma0 : array-like
+        Potential density anomaly (i.e. sigma - 1000) referenced to 0 dbar [kg/m^3]
+
+    Returns
+    -------
+    oxy_mL_L : array-like
+        Dissolved oxygen in units of [mL/L]
+
+    Notes
+    -----
+    Conversion value 44660 is exact for oxygen gas and derived from the ideal gas law.
+    (c.f. Sea-Bird Application Note 64, pg. 6)
+    """
+
+    oxy_mL_L = oxy_umol_kg * (sigma0 + 1000) / 44660
+
+    return oxy_mL_L
+
+def oxy_ml_to_umolkg(oxy_mL_L, sigma0):
+    """Convert dissolved oxygen from units of mL/L to micromol/kg.
+
+    Parameters
+    ----------
+    oxy_mL_L : array-like
+        Dissolved oxygen in units of [mL/L]
+    sigma0 : array-like
+        Potential density anomaly (i.e. sigma - 1000) referenced to 0 dbar [kg/m^3]
+
+    Returns
+    -------
+    oxy_umol_kg : array-like
+        Dissolved oxygen in units of [umol/kg]
+
+    Notes
+    -----
+    Conversion value 44660 is exact for oxygen gas and derived from the ideal gas law.
+    (c.f. Sea-Bird Application Note 64, pg. 6)
+    """
+
+    oxy_umol_kg = oxy_mL_L * 44660 / (sigma0 + 1000)
+
+    return oxy_umol_kg
+
+def sbe43_hysteresis_voltage(volts, p, coefs, sample_freq=24):
+    """
+    SBE equation for removing hysteresis from raw voltage values. This function must
+    be run before the sbe43 conversion function above.
+
+    Oxygen hysteresis can be corrected after conversion from volts to oxygen
+    concentration, see oxy_fitting.hysteresis_correction()
+
+    Parameters
+    ----------
+    volts : array-like
+        Raw voltage
+    p : array-like
+        CTD pressure values (dbar)
+    coefs : dict
+        Dictionary of calibration coefficients (H1, H2, H3, offset)
+    sample_freq : scalar, optional
+        CTD sampling frequency (Hz)
+
+    Returns
+    -------
+    volts_corrected : array-like
+        Hysteresis-corrected voltage
+
+    Notes
+    -----
+    The hysteresis algorithm is backward-looking so scan 0 must be skipped (as no
+    information is available before the first scan).
+
+    See Application Note 64-3 for more information.
+    """
+    use_coefs = ["H1", "H2", "H3", "offset"]
+    _check_coefs(coefs, use_coefs)
+    volts = _check_volts(volts)
+    for key in use_coefs:
+        coefs[key] = float(coefs[key])
+
+    dt = 1 / sample_freq
+    D = 1 + coefs["H1"] * (np.exp(np.array(p) / coefs["H2"]) - 1)
+    C = np.exp(-1 * dt / coefs["H3"])
+
+    oxy_volts = volts + coefs["offset"]
+    oxy_volts_new = np.zeros(oxy_volts.shape)
+    oxy_volts_new[0] = oxy_volts[0]
+    for i in np.arange(1, len(oxy_volts)):
+        oxy_volts_new[i] = (
+            (oxy_volts[i] + (oxy_volts_new[i - 1] * C * D[i])) - (oxy_volts[i - 1] * C)
+        ) / D[i]
+
+    volts_corrected = oxy_volts_new - coefs["offset"]
+
+    return volts_corrected
