@@ -118,6 +118,9 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
         "sbs.sbe4": sbe4,
         "sbs.sbe9": sbe9,
         "sbs.sbe43": sbe43,
+        "sbs.sbe_altimeter": sbe_altimeter,
+        "sbs.seapoint_fluor": seapoint_fluor,
+        "sbs.v_out": v_out,
     }
 
     #   Build column names, look for multiple channels
@@ -151,14 +154,17 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
         print(f"XMLCON entry: Channel {channel}, {col_name}, {this_channel["new_names"].iloc[0]}")
         match this_channel["sensorID"].iloc[0]:
             case "55":
+                #   SBE3
                 data_out = func(data.engineering[:, channel], coefs)
             case "45":
+                #   SBE9
                 data_out = func(
                     data.engineering[:, channel],
                     data.meta_columns.sel(variable="sbe9_temp"),
                     coefs,
                 )
             case "3":
+                #   SBE4C
                 #   Dependent on SBE3 for appropriate line for 4C
                 if this_channel["new_names"].item()[-1].isdigit():
                     t = science_temp.sel(channel="CTDTMP2")
@@ -169,6 +175,7 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
                     data.engineering[:, channel], t, p, coefs["Coefficients2"]
                 )
             case "38":
+                #   SBE43
                 #   In case of second SBE43
                 if this_channel["new_names"].item()[-1].isdigit():
                     t = science_temp.sel(channel="CTDTMP2")
@@ -182,50 +189,22 @@ def convert_science(data, xmlcon_sensors, sensor_lookup=sensor_lookup):
                                 lat=data.meta_columns.sel(variable="lat")[0].item(),
                                 lon=data.meta_columns.sel(variable="lon")[0].item(),
                                 hyst_check=True)
-                
-                    # V_corrected = sbe_eq.sbe43_hysteresis_voltage(
-                    #     raw_df[meta["column"]], p_array, coefs
-                    # )
-                    # converted_df[col] = sbe_eq.sbe43(
-                    #     V_corrected,
-                    #     p_array,
-                    #     t_array,
-                    #     c_array,
-                    #     coefs,
-                    #     lat=meta_df["GPSLAT"],
-                    #     lon=meta_df["GPSLON"],
-                    # )
-            # case _:
-            #     data_out = data.engineering[:, channel]
+            #   Getting down to auxiliary and derived products
+
+            case "0":
+                #   Altimeter
+                data_out = func(data.engineering[:, channel], coefs)
+            case "11":
+                #   Seapoint fluorometer
+                data_out = func(data.engineering[:, channel], coefs)
+
+            case _:
+                #   Return the source voltage out
+                #   Add other routines as needed
+                data_out = func(data.engineering[:, channel])
 
         science_temp.loc[:, science_temp.channel[channel]] = data_out
 
-    # for i in sensor_dictionary.keys():
-    #     #   To be optimized into a single operation
-    #     function_name = sensor_lookup[sensor_dictionary[i]]["function"]
-    #     func = function_map.get(function_name)
-    #     coefs = data.xmlcon_sensors[i]
-    #     col_name = sensor_lookup[sensor_dictionary[i]]["short_name"]
-    #     print(f"XMLCON entry: {i}, {col_name}, {function_name}")
-    #     match sensor_dictionary[i]:
-    #         case "55":
-    #             print(
-    #                 f"FREQUENCY: I woulda ran sbe3 processing on col {i}:"
-    #                 f"method name: {function_name}"
-    #             )
-    #             data_out = func(data.engineering[:, i], coefs)
-    #             print(data_out[0])
-    #         case '3':
-    #             print(f"FREQUENCY: I woulda ran sbe4 processing on col {i}:"
-    #                     f"method name: {func}")
-    #             data_out = func(data.engineering[:, i], coefs)
-    #             print(data_out[0])
-    #         case '45':
-    #             print(f"FREQUENCY: I woulda ran sbe9 processing on col {i}:"
-    #                     f"method name: {func}")
-    #             data_out = func(data.engineering[:, i], coefs)
-    #             print(data_out[0])
-    #     science_temp.loc[:, science_temp.channel[i]] = data_out
     #   Append the new dataset as "science"
     data["science"] = science_temp
     return data
@@ -549,3 +528,70 @@ def sbe43_hysteresis_voltage(volts, p, coefs, sample_freq=24):
     volts_corrected = oxy_volts_new - coefs["offset"]
 
     return volts_corrected
+
+def sbe_altimeter(volts, coefs, decimals=1):
+    """
+    SBE equation for converting altimeter voltages to meters. This conversion
+    is valid for altimeters integrated with any Sea-Bird CTD (e.g. 9+, 19, 25).
+    Sensor ID: 0
+
+    Parameters
+    ----------
+    volts : array-like
+        Raw voltages
+    coefs : dict
+        Dictionary of calibration coefficients (ScaleFactor, Offset)
+
+    Returns
+    -------
+    bottom_distance : array-like
+        Distance from the altimeter to an object below it (meters)
+
+    Notes
+    -----
+    Equation provdided by SBE in Application Note 95, page 1.
+
+    While the SBE documentation refers to a Teledyne Benthos or Valeport altimeter,
+    the equation works for all altimeters typically found in the wild.
+    """
+    use_coefs = ["ScaleFactor", "Offset"]
+    _check_coefs(coefs, use_coefs)
+    volts = _check_volts(volts)
+    for key in use_coefs:
+        coefs[key] = float(coefs[key])
+
+    bottom_distance = (300 * volts / coefs["ScaleFactor"]) + coefs["Offset"]
+
+    return np.around(bottom_distance, decimals)
+
+def seapoint_fluor(volts, coefs, decimals=6):
+    """
+    Raw voltage supplied from fluorometer right now, after looking at xmlcon.
+    The method will do nothing but spit out the exact values that came in.
+    SensorID: 11
+
+    Parameters
+    ----------
+    volts : array-like
+        Raw voltage
+    coefs : dict
+        Dictionary of calibration coefficients (GainSetting, Offset)
+
+    Returns
+    -------
+    fluoro : array-like
+        Raw voltage
+
+    Notes
+    -----
+    According to .xmlcon, GainSetting "is an array index, not the actual gain setting."
+    """
+    _check_coefs(coefs, ["GainSetting", "Offset"])
+    volts = np.array(volts)
+    fluoro = np.around(volts, decimals) #   Return voltage
+
+    return fluoro
+
+def v_out(source):
+    #   Return voltage source
+    return source
